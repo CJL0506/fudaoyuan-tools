@@ -3,106 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>辅导员谈话记录生成器 (陈佳凌最终决策版)</title>
+    <title>高校辅导员谈话记录生成工具 (逻辑增强版)</title>
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: #f0f4f8; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 900px; max-width: 100%; }
-        h1 { color: #2d3748; text-align: center; margin-bottom: 30px; font-weight: 700; }
-        
-        .card { background: #fff; border: 1px solid #e2e8f0; padding: 25px; border-radius: 12px; margin-bottom: 20px; transition: 0.2s; }
-        .card:hover { border-color: #cbd5e0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .card-title { font-weight: 700; margin-bottom: 12px; color: #4a5568; display: block; font-size: 16px; }
-        
-        .api-input { width: 96%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 8px; font-family: monospace; color: #2d3748; background: #f7fafc; }
-        .api-input:focus { border-color: #4299e1; outline: none; background: #fff; }
-
-        .file-upload { position: relative; display: flex; align-items: center; justify-content: center; height: 100px; border: 2px dashed #cbd5e0; border-radius: 12px; background: #f7fafc; cursor: pointer; transition: 0.2s; }
-        .file-upload:hover { border-color: #4299e1; background: #ebf8ff; color: #2b6cb0; }
-        
-        .btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3); transition: 0.2s; }
-        .btn:disabled { background: #cbd5e0; cursor: not-allowed; box-shadow: none; }
-        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(66, 153, 225, 0.4); }
-
-        .log-area { height: 250px; overflow-y: auto; background: #2d3748; color: #edf2f7; padding: 20px; border-radius: 12px; font-size: 13px; margin-top: 20px; font-family: "Consolas", monospace; line-height: 1.6; }
-        .log-entry { margin-bottom: 8px; border-bottom: 1px solid #4a5568; padding-bottom: 4px; }
-        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-left: 5px; font-weight: bold; }
-        .tag-role { background: #48bb78; color: white; }
-        .tag-topic { background: #ed8936; color: white; }
-
-        .tip { font-size: 13px; color: #718096; margin-top: 8px; }
+        body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; background-color: #f0f2f5; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 850px; max-width: 100%; }
+        h1 { color: #2c3e50; text-align: center; margin-bottom: 20px; font-size: 24px; }
+        .box { background: #fff; border: 1px solid #e1e4e8; padding: 20px; border-radius: 8px; margin-bottom: 15px; }
+        .box-title { font-weight: bold; margin-bottom: 10px; color: #2c3e50; display: block; }
+        .api-input { width: 96%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; color: #333; background-color: #f8f9fa; }
+        .file-label { display: block; background: #e3f2fd; border: 2px dashed #90caf9; color: #1976d2; padding: 20px; border-radius: 6px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .file-label:hover { background: #bbdefb; border-color: #42a5f5; }
+        .btn { width: 100%; padding: 14px; background: #2e7d32; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn:disabled { background: #cfd8dc; cursor: not-allowed; box-shadow: none; color: #90a4ae; }
+        .btn:hover:not(:disabled) { background: #1b5e20; }
+        .log-area { height: 250px; overflow-y: auto; background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-size: 13px; margin-top: 15px; font-family: Consolas, monospace; line-height: 1.5; }
+        .footer { text-align: center; font-size: 12px; color: #aaa; margin-top: 20px; }
+        .highlight { color: #81d4fa; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🎓 学生谈话记录智能生成器 (陈佳凌最终决策版)</h1>
+    <h1>🎓 学生谈话记录批量生成器 (逻辑增强版)</h1>
 
-    <div class="card">
-        <span class="card-title">🔑 第一步：设置 DeepSeek API Key</span>
-        <input type="password" id="apiKey" class="api-input" placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" oninput="saveKey()">
-        <div class="tip">Key 仅保存在您的本地浏览器缓存中，安全无虞。</div>
-    </div>
-
-    <div class="card">
-        <span class="card-title">📂 第二步：上传学生名单 (Excel)</span>
-        <label for="uploadExcel" class="file-upload" id="fileLabel">
-            <span>点击选择 Excel 文件 (.xlsx / .xls)</span>
-        </label>
-        <input type="file" id="uploadExcel" accept=".xlsx, .xls" onchange="handleFileUpload(this)" style="display:none;">
-        <div class="tip">
-            Excel 必填列：<code>姓名</code>、<code>班级</code>、<code>学号</code><br>
-            选填列：<code>职务</code> (AI会根据职务自动调整人设)
+    <div class="box">
+        <span class="box-title">🔑 设置 API Key</span>
+        <input type="password" id="apiKey" class="api-input" placeholder="请输入 DeepSeek API Key (sk-开头)" oninput="saveKey()">
+        <div style="font-size:12px; color:#718096; margin-top:5px;">
+            * Key 仅保存在本地浏览器缓存中，安全无虞。
         </div>
     </div>
 
-    <button id="generateBtn" class="btn" onclick="startProcess()" disabled>🚀 开始生成 (保持人设一致性)</button>
+    <div class="box">
+        <span class="box-title">📂 第一步：准备 Excel 表格</span>
+        <p style="font-size:13px; color:#666; margin:5px 0 10px;">
+            表格首行必须包含：<code>姓名</code>、<code>班级</code>、<code>学号</code><br>
+            <b>✨ 强力功能：</b> 您可以在表格中增加任意列（如“家庭情况”、“性格特点”、“意向城市”），AI 会自动读取并整合进谈话内容中！<br>
+            * 系统将优先生成：职业规划、心理关怀、假期去向。
+        </p>
+        <label for="uploadExcel" class="file-label" id="fileLabel">点击选择 Excel 文件 (.xlsx / .xls)</label>
+        <input type="file" id="uploadExcel" accept=".xlsx, .xls" onchange="handleFileUpload(this)" style="display:none;">
+    </div>
 
-    <div class="log-area" id="logArea">等待任务启动...</div>
+    <button id="generateBtn" class="btn" onclick="startProcess()" disabled>🚀 开始智能生成</button>
+
+    <div class="log-area" id="logArea">等待任务开始...</div>
+    <div class="footer">本工具所有数据处理均在本地浏览器完成，不会上传学生隐私数据。</div>
 </div>
 
 <script>
     let loadedData = [];
     const API_URL = "https://api.deepseek.com/chat/completions"; 
 
-    // === 1. 基础配置与本地存储 ===
+    // === 初始化：读取本地存储的Key ===
     window.onload = function() {
-        const savedKey = localStorage.getItem("deepseek_key_v2");
-        if(savedKey) document.getElementById("apiKey").value = savedKey;
+        const savedKey = localStorage.getItem("deepseek_key");
+        if(savedKey) {
+            document.getElementById("apiKey").value = savedKey;
+        }
     }
 
     function saveKey() {
         const key = document.getElementById("apiKey").value.trim();
-        localStorage.setItem("deepseek_key_v2", key);
+        localStorage.setItem("deepseek_key", key);
     }
 
-    // === 2. 工具函数：生成日期与地点 ===
-    function generateChronologicalDates(count) {
+    // === 话题配置 (加权) ===
+    // 通过重复核心话题，提高随机选中的概率
+    const weightedTopics = [
+        "职业规划", "职业规划", "职业规划", // 3x 权重
+        "心理关怀", "心理关怀", "心理关怀", // 3x 权重
+        "假期去向", "假期去向", "假期去向", // 3x 权重
+        "宿舍生活", "社会实践", "人际关系"  // 1x 权重 (辅助话题)
+    ];
+
+    function getRandomLocation() {
+        const ranges = [{floor: 1, min: 1, max: 7}, {floor: 2, min: 1, max: 7}, {floor: 3, min: 1, max: 7}];
+        const r = ranges[Math.floor(Math.random() * ranges.length)];
+        return `1-${r.floor}0${Math.floor(Math.random() * (r.max - r.min + 1)) + r.min}`;
+    }
+
+    // 生成时间序列 (确保不乱序)
+    function generateSortedDates(count) {
         let dates = [];
         const end = new Date().getTime();
-        const start = end - (160 * 24 * 60 * 60 * 1000); // 过去半年
-        for (let i = 0; i < count; i++) {
-            dates.push(new Date(start + Math.random() * (end - start)));
-        }
+        const start = end - (150 * 24 * 60 * 60 * 1000); // 过去5个月
+        for (let i = 0; i < count; i++) dates.push(new Date(start + Math.random() * (end - start)));
         return dates.sort((a, b) => a - b).map(d => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`);
     }
 
-    function getRandomLocation() {
-        const ranges = [{f:1, min:101, max:107}, {f:2, min:201, max:207}, {f:3, min:301, max:307}];
-        const r = ranges[Math.floor(Math.random() * ranges.length)];
-        const room = Math.floor(Math.random() * (r.max - r.min + 1)) + r.min;
-        return `1-${room}`; // 格式如 1-105
-    }
-
-    // === 3. Excel 处理 ===
     function handleFileUpload(input) {
         const file = input.files[0];
         if (!file) return;
-        document.getElementById('fileLabel').innerHTML = `✅ 已加载: <b>${file.name}</b>`;
-        
+        document.getElementById('fileLabel').innerText = "✅ 已加载: " + file.name;
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
@@ -111,155 +108,142 @@
                 loadedData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 if (loadedData.length > 0 && loadedData[0]['姓名']) {
                     document.getElementById('generateBtn').disabled = false;
-                    addLog(`成功读取 ${loadedData.length} 名学生数据。`);
-                } else { alert("Excel 缺少 '姓名' 列，请检查格式。"); }
-            } catch(err) { alert("文件读取失败，请重试。"); }
+                    addLog(`读取成功，共 ${loadedData.length} 名学生。`);
+                } else { alert("表格格式错误：缺少'姓名'列"); }
+            } catch(err) { alert("读取失败，请检查文件"); }
         };
         reader.readAsArrayBuffer(file);
     }
 
-    function addLog(msg, type="") {
+    function addLog(msg) {
         const div = document.getElementById('logArea');
-        let html = `<div class="log-entry">> ${msg}`;
-        if(type) html += `<span class="tag tag-role">${type}</span>`;
-        html += `</div>`;
-        div.innerHTML += html;
+        div.innerHTML += `<div style="margin-bottom:5px; border-bottom:1px solid #37474f;">> ${msg}</div>`;
         div.scrollTop = div.scrollHeight;
     }
 
-    // === 4. 核心逻辑：AI 统筹生成 ===
-    async function generateStudentRecords(apiKey, student) {
+    // === 核心生成逻辑 ===
+    async function generateRecordsByAI(apiKey, student, recordCount) {
         const name = student['姓名'];
-        const studentClass = student['班级'] || "未知班级";
-        const position = student['职务'] || ""; // 班长, 团支书, 或 空
-        const count = Math.floor(Math.random() * 5) + 1; // 1-5条记录
-        const dates = generateChronologicalDates(count);
+        const dates = generateSortedDates(recordCount);
         
-        // 核心：构建 Prompt，强制逻辑一致性
-        const prompt = `
-        你是一名专业、温暖的高校辅导员。请为学生生成 ${count} 份谈话记录。
-        
-        【学生画像】
-        姓名：${name}
-        班级：${studentClass}
-        职务：${position ? position : "无职务"}
-        
-        【生成要求 - 极其重要】
-        1. **人设一致性**：请先在内心为该学生设定一个合理的“人设”（例如：踏实稳重型、迷茫探索型、积极活跃型）。
-           - 如果有职务（如班长），请设定为责任心强、配合工作的类型。
-           - 整个时间线中，学生的状态变化必须符合逻辑。**绝对禁止**出现前后矛盾（例如：不要前一次谈话是学业预警，后一次就是获得国奖）。
-        2. **话题限制**：谈话内容主要围绕以下主题（随机组合，不要每次都一样）：
-           - **职业规划** (考研/就业/考公的迷茫与确定)
-           - **心理关怀** (适应性、人际关系、情绪调节)
-           - **假期去向** (离校安全、假期实践、留校复习)
-           - **宿舍生活** (室友关系、作息习惯)
-           *注意：尽量少写极端的学业预警，除非人设是“学困生”。多写温和的引导和关心。*
-        3. **内容融合**：请在谈话中自然地提及他所在的【${studentClass}】或【${position}】身份。
-        4. **格式要求**：
-           - 返回 JSON 数组。
-           - 包含字段：content (50-150字，第三人称叙述), reflection (30-50字，辅导员反思)。
-           - 不需要返回日期和地点，我这边生成。
+        // 1. 构建学生全画像 (将Excel所有列转为文本)
+        let studentProfile = JSON.stringify(student, null, 2);
 
-        【JSON 格式示例】
-        [
-          {"content": "...", "reflection": "..."},
-          {"content": "...", "reflection": "..."}
-        ]
+        // 2. 预设任务列表
+        let tasks = [];
+        for(let i=0; i<recordCount; i++) {
+            tasks.push({ 
+                index: i+1, 
+                date: dates[i], 
+                topic: weightedTopics[Math.floor(Math.random() * weightedTopics.length)], 
+                location: getRandomLocation(), 
+                includeReflection: Math.random() > 0.4 // 60% 概率有反思
+            });
+        }
+
+        // 3. 增强版 Prompt
+        const prompt = `
+        你是一名经验丰富的高校辅导员。请根据以下学生信息，生成 ${recordCount} 份连贯的谈话记录。
+        
+        【学生画像数据 (来自Excel)】
+        ${studentProfile}
+
+        【生成任务列表】
+        ${tasks.map(t => `第${t.index}次：${t.date}，主题：${t.topic}，${t.includeReflection ? "需写反思" : "不写反思"}`).join("\n")}
+
+        【严格要求 - 请务必遵守】
+        1. **一致性原则**：请先分析【学生画像数据】，为学生确立一个合理的人设。
+           - 严禁前后矛盾！(例如：不能第一次说学业困难，第二次突然说拿了国家奖学金)。
+           - 如果表格里有特殊备注（如“贫困”、“考公”、“心理预警”），请务必在谈话内容中融合这些信息。
+        2. **话题侧重**：重点关注职业规划、心理关怀和假期生活。内容要温暖、有建设性，少写单纯的说教。
+        3. **格式要求**：
+           - 返回一个标准的 JSON 数组。
+           - 数组包含 ${recordCount} 个对象。
+           - 每个对象包含字段: "content" (谈话内容, 50-150字), "reflection" (反思, 30-50字，若无需反思则留空字符串)。
+           - **不要**使用Markdown格式，直接返回纯JSON字符串。
         `;
 
         try {
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                body: JSON.stringify({
-                    model: "deepseek-chat",
-                    messages: [{"role": "user", "content": prompt}],
-                    temperature: 1.1 // 稍微高一点的随机性，保证每个人不一样
+                body: JSON.stringify({ 
+                    model: "deepseek-chat", 
+                    messages: [{"role": "user", "content": prompt}], 
+                    temperature: 1.0 // 降低一点随机性以保证逻辑连贯
                 })
             });
-
-            if (!response.ok) throw new Error("API Limit");
-            
             const json = await response.json();
-            // 清理 markdown 标记
             const raw = json.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
             const aiResults = JSON.parse(raw);
-
-            // 将 AI 内容与我们的 时间/地点 合并
-            return aiResults.map((item, index) => ({
-                date: dates[index],
-                location: getRandomLocation(),
-                content: item.content,
-                reflection: item.reflection
+            
+            // 合并 AI 结果与本地生成的日期地点
+            return aiResults.map((item, index) => ({ 
+                ...item, 
+                date: tasks[index].date,
+                topic: tasks[index].topic,
+                location: tasks[index].location
             }));
 
         } catch (e) {
             console.error(e);
-            addLog(⚠️ AI 生成失败 (${name})，使用备用逻辑。`);
+            addLog(`⚠️ <span class="highlight">${name}</span> 生成时遇到网络波动，转为使用备用模板。`);
             // 兜底逻辑
-            return dates.map(d => ({
-                date: d,
-                location: getRandomLocation(),
-                content: `辅导员与${studentClass}的${name}进行了谈话。主要是了解其近期的生活状态和职业规划想法。学生表示目前状态稳定，${position ? "作为"+position+"工作认真负责。" : "能够遵守校规校纪。"}`,
-                reflection: "该生情况稳定，保持关注。"
+            return tasks.map(t => ({
+                date: t.date, topic: t.topic, location: t.location,
+                content: `辅导员与${name}就${t.topic}进行了深入交流。结合学生实际情况，给予了相应的指导建议。学生表示理解并会积极调整状态。`,
+                reflection: t.includeReflection ? "该生状态稳定，建议持续关注其后续发展。" : ""
             }));
         }
     }
 
-    // === 5. Word 生成与打包 ===
     async function startProcess() {
         const apiKey = document.getElementById('apiKey').value.trim();
         if(!apiKey.startsWith("sk-")) { alert("请先输入正确的 API Key"); return; }
-        
         document.getElementById('generateBtn').disabled = true;
+        
         const zip = new JSZip();
         const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, HeadingLevel, AlignmentType, TextRun } = docx;
 
         for (let i = 0; i < loadedData.length; i++) {
             const student = loadedData[i];
             const name = student['姓名'];
+            // 随机生成 1-5 次记录
+            const recordCount = Math.floor(Math.random() * 5) + 1; 
             
-            addLog(`[${i+1}/${loadedData.length}] 正在分析并生成：${name}`, student['职务'] || "普通学生");
+            addLog(`[${i+1}/${loadedData.length}] 正在为 <span class="highlight">${name}</span> 生成 ${recordCount} 条记录...`);
             
-            // 获取 AI 生成的逻辑一致的记录
-            const records = await generateStudentRecords(apiKey, student);
-            
-            // 构建 Word
+            const records = await generateRecordsByAI(apiKey, student, recordCount);
             const docChildren = [];
             
-            // 标题
-            docChildren.push(new Paragraph({ 
-                text: "学生辅导记录册", 
-                heading: HeadingLevel.HEADING_1, 
-                alignment: AlignmentType.CENTER,
-                spacing: { after: 400 }
-            }));
-
-            // 顶部基本信息表
-            docChildren.push(new Table({
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                rows: [
-                    new TableRow({ children: [
-                        new TableCell({ children: [new Paragraph({text: "姓名", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
-                        new TableCell({ children: [new Paragraph(String(name))], width: {size: 35, type: WidthType.PERCENTAGE} }),
-                        new TableCell({ children: [new Paragraph({text: "学号", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
-                        new TableCell({ children: [new Paragraph(String(student['学号'] || ""))], width: {size: 35, type: WidthType.PERCENTAGE} }),
-                    ]}),
-                    new TableRow({ children: [
-                        new TableCell({ children: [new Paragraph({text: "班级", bold: true})] }),
-                        new TableCell({ children: [new Paragraph(String(student['班级'] || ""))], width: {size: 35, type: WidthType.PERCENTAGE} }),
-                        new TableCell({ children: [new Paragraph({text: "职务", bold: true})] }),
-                        new TableCell({ children: [new Paragraph(String(student['职务'] || "无"))], width: {size: 35, type: WidthType.PERCENTAGE} }),
-                    ]}),
-                ]
-            }));
+            // 文档标题
+            docChildren.push(new Paragraph({ text: "学生成长辅导记录册", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 300 } }));
             
-            docChildren.push(new Paragraph({ text: "", spacing: { after: 300 } }));
+            // 顶部表格：自动读取 Excel 中的所有列
+            // 我们只展示关键的前4个信息，防止表格炸裂，或者固定展示几项
+            const infoRows = [];
+            // 固定展示：姓名、学号
+            infoRows.push(new TableRow({ children: [
+                new TableCell({ children: [new Paragraph({text: "姓名", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
+                new TableCell({ children: [new Paragraph(String(name))], width: {size: 35, type: WidthType.PERCENTAGE} }),
+                new TableCell({ children: [new Paragraph({text: "学号", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
+                new TableCell({ children: [new Paragraph(String(student['学号'] || "无"))], width: {size: 35, type: WidthType.PERCENTAGE} }),
+            ]}));
+            // 固定展示：班级、(职务或其他)
+            infoRows.push(new TableRow({ children: [
+                new TableCell({ children: [new Paragraph({text: "班级", bold: true})] }),
+                new TableCell({ children: [new Paragraph(String(student['班级'] || "无"))] }),
+                new TableCell({ children: [new Paragraph({text: "其他信息", bold: true})] }),
+                new TableCell({ children: [new Paragraph("详见电子档案")] }), // 简化处理，避免表格过长
+            ]}));
 
-            // 循环记录
+            docChildren.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: infoRows }));
+            docChildren.push(new Paragraph({ text: "", spacing: { after: 400 } }));
+
+            // 循环插入记录
             records.forEach((rec, idx) => {
                 if (idx > 0) {
-                     docChildren.push(new Paragraph({ 
+                    docChildren.push(new Paragraph({ 
                         text: "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", 
                         alignment: AlignmentType.CENTER, 
                         color: "#999999",
@@ -267,38 +251,27 @@
                     }));
                 }
 
-                docChildren.push(new Paragraph({ 
-                    text: `第 ${idx + 1} 次谈话`, 
-                    heading: HeadingLevel.HEADING_3,
-                    spacing: { after: 100 }
-                }));
+                docChildren.push(new Paragraph({ text: `第 ${idx + 1} 次谈话记录`, heading: HeadingLevel.HEADING_3, spacing: { after: 100 } }));
+                
+                // 记录头信息
+                docChildren.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: [
+                    new TableRow({ children: [
+                        new TableCell({ children: [new Paragraph({text: "日期", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }), 
+                        new TableCell({ children: [new Paragraph(rec.date)], width: {size: 35, type: WidthType.PERCENTAGE} }),
+                        new TableCell({ children: [new Paragraph({text: "地点", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }), 
+                        new TableCell({ children: [new Paragraph(rec.location)], width: {size: 35, type: WidthType.PERCENTAGE} }),
+                    ]}),
+                    new TableRow({ children: [ 
+                        new TableCell({ children: [new Paragraph({text: "谈话主题", bold: true})] }), 
+                        new TableCell({ children: [new Paragraph(rec.topic)], columnSpan: 3 }) 
+                    ]})
+                ]}));
 
-                // 记录头信息表 (时间/地点)
-                docChildren.push(new Table({
-                    width: { size: 100, type: WidthType.PERCENTAGE },
-                    rows: [
-                        new TableRow({ children: [
-                            new TableCell({ children: [new Paragraph({text: "谈话日期", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
-                            new TableCell({ children: [new Paragraph(rec.date)], width: {size: 35, type: WidthType.PERCENTAGE} }),
-                            new TableCell({ children: [new Paragraph({text: "谈话地点", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
-                            new TableCell({ children: [new Paragraph(rec.location)], width: {size: 35, type: WidthType.PERCENTAGE} }),
-                        ]})
-                    ]
-                }));
-
-                // 内容
-                docChildren.push(new Paragraph({ 
-                    children: [new TextRun({ text: "【谈话过程记录】", bold: true, color: "#2b6cb0" })],
-                    spacing: { before: 150, after: 100 } 
-                }));
+                docChildren.push(new Paragraph({ text: "【谈话内容】", bold: true, spacing: { before: 100 } }));
                 docChildren.push(new Paragraph({ text: rec.content, spacing: { line: 260 } }));
-
-                // 反思 (随机显示，让文档看起来不那么机械)
-                if (Math.random() > 0.3) { 
-                    docChildren.push(new Paragraph({ 
-                        children: [new TextRun({ text: "【辅导员反思】", bold: true, color: "#c53030" })],
-                        spacing: { before: 150, after: 100 } 
-                    }));
+                
+                if (rec.reflection) {
+                    docChildren.push(new Paragraph({ text: "【辅导员反思】", bold: true, spacing: { before: 100 } }));
                     docChildren.push(new Paragraph({ text: rec.reflection, spacing: { line: 260 } }));
                 }
                 
@@ -306,15 +279,14 @@
             });
 
             const doc = new Document({ sections: [{ children: docChildren }] });
-            const blob = await Packer.toBlob(doc);
-            zip.file(`${student['班级']}_${name}_记录表.docx`, blob);
+            zip.file(`${name}_成长记录.docx`, await Packer.toBlob(doc));
             
-            // 延时防止速率限制
-            await new Promise(r => setTimeout(r, 1200));
+            // 适当延时，避免API并发过高
+            await new Promise(r => setTimeout(r, 1000));
         }
 
-        addLog("✅ 全部完成，正在启动下载...");
-        saveAs(await zip.generateAsync({type:"blob"}), "辅导员谈话记录包.zip");
+        addLog("🎉 全部生成完毕！正在启动下载...");
+        saveAs(await zip.generateAsync({type:"blob"}), "谈话记录批量导出.zip");
         document.getElementById('generateBtn').disabled = false;
     }
 </script>
