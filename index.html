@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>辅导员谈话生成器 (连续剧模式+特殊情况)</title>
+    <title>辅导员谈话生成器 (200字精简对话版)</title>
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -28,13 +28,13 @@
 <body>
 
 <div class="container">
-    <h1>🎓 学生谈话生成器 (连续对话版)</h1>
+    <h1>🎓 学生谈话生成器 (200字精简版)</h1>
 
     <div class="box">
         <span class="box-title">🔑 API Key (已内置)</span>
         <input type="password" id="apiKey" class="api-input" value="sk-ac06ce5e03ec4f13abe17ad8b42582ed" oninput="saveKey()">
         <div style="font-size:12px; color:#e53e3e; margin-top:5px; font-weight:bold;">
-            ⚠️ 注意：Key 已内置，请勿外传文件。
+            ⚠️ 注意：Key 已内置，请勿外传。
         </div>
     </div>
 
@@ -42,14 +42,14 @@
         <span class="box-title">📂 第一步：准备 Excel 表格</span>
         <p style="font-size:13px; color:#666; margin:5px 0 10px;">
             必填列：<code>姓名</code>、<code>班级</code>、<code>学号</code><br>
-            <b>✨ 新增功能：</b> 请增加一列 <code>其他情况</code> (如: "挂科预警"、"家庭困难"、"想当兵")。<br>
-            如果有内容，AI 会自动围绕它生成连续的跟踪谈话；如果为空，则按常规(职业/心理)生成。
+            选填列：<code>其他情况</code> (如有内容，AI将以此为主线生成连续剧式对话)<br>
+            <b>✨ 格式说明：</b> 生成一问一答对话，每段记录严格控制在 <b>200字以内</b>。
         </p>
         <label for="uploadExcel" class="file-label" id="fileLabel">点击选择 Excel 文件 (.xlsx / .xls)</label>
         <input type="file" id="uploadExcel" accept=".xlsx, .xls" onchange="handleFileUpload(this)" style="display:none;">
     </div>
 
-    <button id="generateBtn" class="btn" onclick="startProcess()" disabled>🚀 开始生成连续剧式对话</button>
+    <button id="generateBtn" class="btn" onclick="startProcess()" disabled>🚀 开始生成 (精简模式)</button>
 
     <div class="log-area" id="logArea">等待任务开始...</div>
 </div>
@@ -69,7 +69,7 @@
         localStorage.setItem("deepseek_key", key);
     }
 
-    // === 话题库 (作为备选，AI会优先参考其他情况) ===
+    // === 话题库 ===
     const baseTopics = [
         "职业规划", "考研指导", "就业意向", 
         "心理关怀", "人际适应", "情绪调节",
@@ -116,19 +116,19 @@
         div.scrollTop = div.scrollHeight;
     }
 
-    // === 核心：连续剧生成逻辑 ===
+    // === 核心：连续剧生成逻辑 (含字数限制) ===
     async function generateRecordsByAI(apiKey, student, recordCount) {
         const name = student['姓名'];
         const dates = generateSortedDates(recordCount);
         
-        // 读取“其他情况”列，如果没填则是空字符串
+        // 读取“其他情况”列
         const otherInfo = student['其他情况'] || ""; 
         const hasSpecialInfo = otherInfo && otherInfo.length > 1;
 
         // 构建学生画像
         let studentProfile = JSON.stringify(student, null, 2);
 
-        // 预设任务 (如果有特殊情况，让AI自己定主题，否则随机分配)
+        // 预设任务
         let tasks = [];
         for(let i=0; i<recordCount; i++) {
             tasks.push({ 
@@ -145,18 +145,18 @@
         【学生画像】
         ${studentProfile}
         
-        【关键指令 - 连续剧模式】
+        【关键指令】
         1. **关注"其他情况"**：
-           - 如果学生表格里的【其他情况】有内容（例如"${otherInfo}"），你**必须**将这个内容作为核心话题，穿插在几次谈话中。
-           - 如果【其他情况】为空，则主要围绕职业规划、心理、假期展开。
-        2. **上下文关联（Timeline）**：
-           - 这 ${recordCount} 次谈话是按时间顺序发生的。
-           - **后一次谈话必须基于前一次的进度！**
-           - 例如：第1次谈话建议考研 -> 第2次问复习进度 -> 第3次聊考前焦虑。不要出现"前面刚说完学业预警，下次突然说拿了国奖"这种矛盾。
-        3. **格式要求**：
-           - 严格的一问一答对话格式（辅导员：... 学生：...）。
-           - **不要**生成反思。
-           - 返回 JSON 数组，包含字段: "topic"(简短主题), "content"(对话全文本)。
+           - 如果表格里【其他情况】有内容（如"${otherInfo}"），必须以此为核心，贯穿几次谈话。
+           - 若为空，则围绕职业、心理、假期展开。
+        2. **上下文关联**：
+           - 谈话按时间顺序发生，后一次谈话要基于前一次的反馈。
+        3. **格式与字数（严格）**：
+           - 必须是对话体：辅导员：... 学生：...
+           - **字数限制**：每次对话内容必须控制在 **200字以内**，简洁明了，不要长篇大论。
+           - 不写反思。
+        4. **输出JSON**：
+           - 数组字段: "topic"(简短主题), "content"(对话文本)。
 
         【时间安排】
         ${tasks.map(t => `第${t.index}次：${t.date}`).join("\n")}
@@ -176,7 +176,6 @@
             const raw = json.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
             const aiResults = JSON.parse(raw);
             
-            // 合并结果
             return aiResults.map((item, index) => ({ 
                 ...item, 
                 date: tasks[index].date,
@@ -188,7 +187,7 @@
             addLog(`⚠️ <span class="highlight">${name}</span> 生成异常，使用备用数据。`);
             return tasks.map(t => ({
                 date: t.date, topic: "日常谈心", location: t.location,
-                content: `辅导员：最近怎么样？\n学生：挺好的。\n辅导员：针对你${otherInfo || '规划'}方面，有进展吗？\n学生：还在努力。`
+                content: `辅导员：最近${t.topic}方面有进展吗？\n学生：还在按计划进行。\n辅导员：好的，保持沟通。(内容简短)`
             }));
         }
     }
@@ -204,11 +203,10 @@
         for (let i = 0; i < loadedData.length; i++) {
             const student = loadedData[i];
             const name = student['姓名'];
-            // 随机生成 1-5 次
             const recordCount = Math.floor(Math.random() * 5) + 1; 
-            const specialInfo = student['其他情况'] ? ` [含特殊情况: ${student['其他情况']}]` : "";
+            const specialInfo = student['其他情况'] ? ` [含特殊情况]` : "";
             
-            addLog(`[${i+1}/${loadedData.length}] 正在生成 <span class="highlight">${name}</span> 的 ${recordCount} 场连续对话...${specialInfo}`);
+            addLog(`[${i+1}/${loadedData.length}] 正在生成 <span class="highlight">${name}</span> 的 ${recordCount} 场精简对话...${specialInfo}`);
             
             const records = await generateRecordsByAI(apiKey, student, recordCount);
             const docChildren = [];
@@ -216,8 +214,7 @@
             // 标题
             docChildren.push(new Paragraph({ text: "学生成长谈话记录册", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 300 } }));
             
-            // 基础信息表 (自动读取 Excel 所有列)
-            // 这里我们手动构造前几列，确保格式好看，其他列放在备注里
+            // 基础信息表
             const infoRows = [];
             infoRows.push(new TableRow({ children: [
                 new TableCell({ children: [new Paragraph({text: "姓名", bold: true})], width: {size: 15, type: WidthType.PERCENTAGE} }),
@@ -226,12 +223,11 @@
                 new TableCell({ children: [new Paragraph(String(student['学号'] || "无"))], width: {size: 35, type: WidthType.PERCENTAGE} }),
             ]}));
             
-            // 将"其他情况"放入表格
             infoRows.push(new TableRow({ children: [
                 new TableCell({ children: [new Paragraph({text: "班级", bold: true})] }),
                 new TableCell({ children: [new Paragraph(String(student['班级'] || "无"))] }),
                 new TableCell({ children: [new Paragraph({text: "重要备注", bold: true})] }),
-                new TableCell({ children: [new Paragraph(String(student['其他情况'] || "无特殊说明"))] }), 
+                new TableCell({ children: [new Paragraph(String(student['其他情况'] || "无"))] }), 
             ]}));
 
             docChildren.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: infoRows }));
@@ -264,7 +260,6 @@
                 ]}));
 
                 docChildren.push(new Paragraph({ text: "【对话内容】", bold: true, spacing: { before: 100 } }));
-                // 对话内容
                 docChildren.push(new Paragraph({ text: rec.content, spacing: { line: 260 } }));
                 
                 docChildren.push(new Paragraph({ text: "", spacing: { after: 200 } }));
@@ -277,7 +272,7 @@
         }
 
         addLog("🎉 全部完成！开始下载...");
-        saveAs(await zip.generateAsync({type:"blob"}), "连续对话记录包.zip");
+        saveAs(await zip.generateAsync({type:"blob"}), "精简对话记录包.zip");
         document.getElementById('generateBtn').disabled = false;
     }
 </script>
