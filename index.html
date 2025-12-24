@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高校辅导员谈话记录生成工具 (逻辑增强版)</title>
+    <title>高校辅导员谈话记录生成工具 (专用版)</title>
     <script src="https://unpkg.com/docx@7.1.0/build/index.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -31,10 +31,10 @@
     <h1>🎓 学生谈话记录批量生成器 (逻辑增强版)</h1>
 
     <div class="box">
-        <span class="box-title">🔑 设置 API Key</span>
-        <input type="password" id="apiKey" class="api-input" placeholder="请输入 DeepSeek API Key (sk-开头)" oninput="saveKey()">
-        <div style="font-size:12px; color:#718096; margin-top:5px;">
-            * Key 仅保存在本地浏览器缓存中，安全无虞。
+        <span class="box-title">🔑 API Key (已内置)</span>
+        <input type="password" id="apiKey" class="api-input" value="sk-ac06ce5e03ec4f13abe17ad8b42582ed" oninput="saveKey()">
+        <div style="font-size:12px; color:#e53e3e; margin-top:5px; font-weight:bold;">
+            ⚠️ 注意：Key 已直接包含在文件中，请勿将此文件发送给他人。
         </div>
     </div>
 
@@ -59,11 +59,16 @@
     let loadedData = [];
     const API_URL = "https://api.deepseek.com/chat/completions"; 
 
-    // === 初始化：读取本地存储的Key ===
+    // === 初始化：检查本地存储 ===
     window.onload = function() {
+        // 如果本地没有存储，或者当前输入框是默认值，就不覆盖
         const savedKey = localStorage.getItem("deepseek_key");
-        if(savedKey) {
-            document.getElementById("apiKey").value = savedKey;
+        const currentKey = document.getElementById("apiKey").value;
+        
+        // 只有当本地有存储且不等于当前预设值时，才询问或覆盖（这里简化为：如果本地有，优先用本地的，方便您后续更新Key）
+        if(savedKey && savedKey !== currentKey) {
+            console.log("检测到本地有旧Key，但优先使用内置Key或保持当前显示");
+            // document.getElementById("apiKey").value = savedKey; // 如果您希望本地缓存优先，取消注释这行
         }
     }
 
@@ -199,7 +204,7 @@
 
     async function startProcess() {
         const apiKey = document.getElementById('apiKey').value.trim();
-        if(!apiKey.startsWith("sk-")) { alert("请先输入正确的 API Key"); return; }
+        if(!apiKey.startsWith("sk-")) { alert("API Key 无效，请检查设置"); return; }
         document.getElementById('generateBtn').disabled = true;
         
         const zip = new JSZip();
@@ -220,7 +225,6 @@
             docChildren.push(new Paragraph({ text: "学生成长辅导记录册", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER, spacing: { after: 300 } }));
             
             // 顶部表格：自动读取 Excel 中的所有列
-            // 我们只展示关键的前4个信息，防止表格炸裂，或者固定展示几项
             const infoRows = [];
             // 固定展示：姓名、学号
             infoRows.push(new TableRow({ children: [
@@ -234,7 +238,7 @@
                 new TableCell({ children: [new Paragraph({text: "班级", bold: true})] }),
                 new TableCell({ children: [new Paragraph(String(student['班级'] || "无"))] }),
                 new TableCell({ children: [new Paragraph({text: "其他信息", bold: true})] }),
-                new TableCell({ children: [new Paragraph("详见电子档案")] }), // 简化处理，避免表格过长
+                new TableCell({ children: [new Paragraph("详见电子档案")] }), 
             ]}));
 
             docChildren.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: infoRows }));
